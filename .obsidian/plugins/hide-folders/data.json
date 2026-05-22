@@ -1,0 +1,17 @@
+{
+  "areFoldersHidden": true,
+  "matchCaseInsensitive": true,
+  "addHiddenFoldersToObsidianIgnoreList": false,
+  "hideBottomStatusBarIndicatorText": false,
+  "enableCompatQuickExplorer": false,
+  "attachmentFolderNames": [
+    "assets",
+    "dist",
+    "downloads",
+    "envs",
+    "reports",
+    "src",
+    "tests",
+    "tmp"
+  ]
+}
