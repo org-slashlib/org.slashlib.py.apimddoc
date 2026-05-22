@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "org.slashlib.py.apimddoc"
+version = "0.2.0"
+license = "MIT"
+dependencies = [
+  "org.slashlib.py.configloader>=0.1.0",
+  "tomli>=2.0.1; python_version < '3.11'",
+  "jinja2>=3.1.6"
+]
+authors = [
+  { name="Dirk Brenckmann", email="db.developer@gmx.de" },
+]
+description = "generate python API markdown docs"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+apimddoc = "org.slashlib.py.apimddoc.cli:main"
+
+[project.urls]
+"Homepage" = "https://github.com/org-slashlib/org.slashlib.py.apimddoc"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"org.slashlib.py.apimddoc" = ["templates/*.md.j2"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = """
+  -v  
+  --cov 
+  --cov=src/org/slashlib/py/apimddoc
+  --cov-report=term-missing 
+  --cov-report=xml:docs/reports/coverage/xml
+  --cov-report=html:docs/reports/coverage/html
+"""
+
+[tool.coverage.run]
+data_file = "docs/reports/coverage/.coverage"
+source = ["src/org/slashlib/py/apimddoc"]
+
+[tool.coverage.report]
+show_missing = true
+

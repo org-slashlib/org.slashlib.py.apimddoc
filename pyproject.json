@@ -1,0 +1,11 @@
+{
+  "name": "API markdown docs",
+  "version": "0.2.0",
+  "paths": {
+    "root":         "{ROOT}",
+    "assets":       "{ROOT}/assets"
+  },
+  "assets": {
+    "logging":      "{paths.assets}/logging.json"
+  }
+}
