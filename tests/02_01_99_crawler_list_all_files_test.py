@@ -20,6 +20,7 @@ Class: SourceCrawler
 Method: get_all_python_files
 Special Considerations:
 - Directly calls get_all_python_files to list files in the configured project structure.
+- Reality check 😎
 """
 
 from org.slashlib.py.apimddoc.crawler import SourceCrawler
@@ -28,6 +29,8 @@ def test_list_all_python_files():
     """
     What: List all .py files discovered by the SourceCrawler.
     Why: Verify that the crawler finds files based on initialized source roots.
+    
+    Run: pytest -s .\tests\02_01_99_crawler_list_all_files_test.py to see results.
     """
     # Ensure crawler is initialized (handled by metaclass/bootstrap)
     files = SourceCrawler.get_all_python_files()
