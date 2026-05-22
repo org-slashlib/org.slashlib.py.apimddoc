@@ -7,7 +7,7 @@
 #   - DEBUG MARKERS: Commented-out code (e.g., debug prints) MUST be kept exactly where they are.
 #   - WHITESPACE & STRUCTURE: Maintain all original empty lines and the existing file structure. 
 #     Structural integrity takes precedence over "clean code" or "elegance".
-#   - LEAD-IN/OUT: The very first and last lines (and all comments in between) are immutable anchors.
+#   - LEAD-IN/OUT: The very first and last lines (all comments in between) are immutable anchors.
 # - MAINTENANCE:
 #   - Only update pydoc strings (args, returns, raises) if the function signature changes.
 #   - Do NOT delete existing examples or descriptions in pydoc.
@@ -28,6 +28,8 @@ import org.slashlib.py.configloader
 import org.slashlib.py.apimddoc.core.registry as registry
 import org.slashlib.py.apimddoc.renderer.markdown as renderer
 import org.slashlib.py.apimddoc.bootstrap as bootstrap
+import org.slashlib.py.apimddoc.crawler as crawler
+import org.slashlib.py.apimddoc.parser.parser as parser
 
 # setup logging
 log = logging.getLogger(f"org.slashlib.py.apimddoc.{pathlib.Path(__file__).stem}")
@@ -97,13 +99,20 @@ def main() -> None:
     reg = registry.ProjectRegistry()
     md_renderer = renderer.MarkdownRenderer(reg, str(template_dir))
 
-    # 5. Execution (Parser implementation pending)
-    log.info(f"Starting parsing process for roots: {source_roots}")
-    log.info("ASTParser implementation is currently pending. Skipping parsing step.")
+    # 5. Execution
+    log.info("Starting parsing process.")
+    ast_parser = parser.ASTParser(root_path=bootstrap.get_pyproject_path().parent)
+    
+    # Use SourceCrawler to gather all files
+    all_files = crawler.SourceCrawler.get_all_python_files()
+    
+    # Perform parsing
+    ast_parser.parse(all_files)
+    log.info("Parsing process completed.")
 
     log.info("Rendering documentation.")
-    log.info("Module `cli.py` not yet complete!")
     # markdown_output = md_renderer.render()
+    log.info("Module `cli.py` not yet complete!")
     # log.info("Documentation rendered successfully.")
 
 # end of file src/org/slashlib/py/apimddoc/cli.py

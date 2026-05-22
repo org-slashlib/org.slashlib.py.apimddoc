@@ -56,7 +56,11 @@ class SourceCrawler(metaclass=meta.AutoInitializer):
             return
         
         cls._log = logging.getLogger(f"org.slashlib.py.apimddoc.{pathlib.Path(__file__).stem}.{cls.__name__}")
-        cls._source_roots = bootstrap.get_source_roots()
+        
+        # Convert source roots to pathlib.Path objects
+        raw_roots = bootstrap.get_source_roots()
+        cls._source_roots = tuple(pathlib.Path(root) for root in raw_roots)
+
         cls._log.info(f"Initialized crawler with roots: {cls._source_roots}")
         cls.__is_initialized = True
 
