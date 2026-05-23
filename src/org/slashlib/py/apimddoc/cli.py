@@ -90,25 +90,20 @@ def main() -> None:
     # 2. Get Template Directory
     resolved_roots = bootstrap.get_resolved_source_roots()
     template_dir = _get_template_dir(resolved_roots)
-    
-    # 3. Get Project Source Roots via bootstrap
-    source_roots = bootstrap.get_source_roots()
 
-    # 4. Dependency Injection
+    # 3. Use SourceCrawler to gather all files
+    all_files = crawler.SourceCrawler.get_all_python_files()
+
+    # 4. Parse source files
+    log.info("Starting parsing process.")
+    ast_parser = parser.ASTParser(root_path=bootstrap.get_pyproject_path().parent)
+    ast_parser.parse(all_files)
+    log.info("Parsing process completed.")
+
+    # 5. Dependency Injection
     log.info(f"Initializing registry and renderer. Using template dir: {template_dir}")
     reg = registry.ProjectRegistry()
     md_renderer = renderer.MarkdownRenderer(reg, str(template_dir))
-
-    # 5. Execution
-    log.info("Starting parsing process.")
-    ast_parser = parser.ASTParser(root_path=bootstrap.get_pyproject_path().parent)
-    
-    # Use SourceCrawler to gather all files
-    all_files = crawler.SourceCrawler.get_all_python_files()
-    
-    # Perform parsing
-    ast_parser.parse(all_files)
-    log.info("Parsing process completed.")
 
     log.info("Rendering documentation.")
     # markdown_output = md_renderer.render()
