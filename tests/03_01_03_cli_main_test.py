@@ -46,6 +46,10 @@ def test_main_execution(monkeypatch):
     monkeypatch.setattr("org.slashlib.py.apimddoc.cli._get_template_dir", lambda x: "/tmp/templates")
     
     # 3. Mock registry and renderer to avoid complex object initialization
+    from unittest.mock import MagicMock
+    mock_renderer = MagicMock()
+    # Mocke die Klasse im Modul
+    monkeypatch.setattr("org.slashlib.py.apimddoc.cli.renderer", mock_renderer)    
     monkeypatch.setattr("org.slashlib.py.apimddoc.core.registry.ProjectRegistry", lambda: None)
     monkeypatch.setattr("org.slashlib.py.apimddoc.renderer.markdown.MarkdownRenderer", lambda reg, path: None)
     
