@@ -26,9 +26,9 @@ import org.slashlib.py.configloader
 
 # internal imports
 import org.slashlib.py.apimddoc.core.registry as registry
-import org.slashlib.py.apimddoc.renderer.markdown as renderer
+from org.slashlib.py.apimddoc.renderer.markdown import MarkdownRenderer as renderer
 import org.slashlib.py.apimddoc.bootstrap as bootstrap
-import org.slashlib.py.apimddoc.crawler as crawler
+from org.slashlib.py.apimddoc.crawler import SourceCrawler as crawler
 import org.slashlib.py.apimddoc.parser.parser as parser
 
 # setup logging
@@ -77,37 +77,52 @@ def _get_template_dir(resolved_roots: typing.Tuple[str, ...]) -> pathlib.Path:
     # Fallback to package resources
     return importlib.resources.files("org.slashlib.py.apimddoc").joinpath("templates")
 
-def main() -> None:
+def main(output_dir: str = None) -> None:
     """
     Main entry point for the CLI tool.
     
     Coordinates the registry initialization, parsing and rendering process.
     """
-    # 1. Setup CLI arguments
-    arg_parser = argparse.ArgumentParser(description="API Documentation Generator")
-    arg_parser.parse_args()
-
-    # 2. Get Template Directory
+    # 1. Get Template Directory
     resolved_roots = bootstrap.get_resolved_source_roots()
     template_dir = _get_template_dir(resolved_roots)
 
-    # 3. Use SourceCrawler to gather all files
-    all_files = crawler.SourceCrawler.get_all_python_files()
+    # 2. Use SourceCrawler to gather all files
+    # FUTURE: (maybe) - source directories
+    # Determine input path: use provided arg or default to current directory
+    # input_path = pathlib.Path(args.input) if args.input else bootstrap.get_pyproject_path().parent
+    # all_files = crawler.get_all_python_files(input_path)
+    all_files = crawler.get_all_python_files()
 
-    # 4. Parse source files
+    # 3. Parse source files
     log.info("Starting parsing process.")
     ast_parser = parser.ASTParser(root_path=bootstrap.get_pyproject_path().parent)
     ast_parser.parse(all_files)
     log.info("Parsing process completed.")
 
-    # 5. Dependency Injection
+    # 4. Dependency Injection
     log.info(f"Initializing registry and renderer. Using template dir: {template_dir}")
-    reg = registry.ProjectRegistry()
-    md_renderer = renderer.MarkdownRenderer(reg, str(template_dir))
+    renderer.setup(str(template_dir))
 
-    log.info("Rendering documentation.")
-    # markdown_output = md_renderer.render()
-    log.info("Module `cli.py` not yet complete!")
-    # log.info("Documentation rendered successfully.")
+    # 5. Evaluate output directory
+    if output_dir is None:
+        output_dir = bootstrap.get_pyproject_path().parent / "docs"
+    
+    output_path = pathlib.Path(output_dir)
+    log.info(f"Rendering documentation to: {output_path}")   
+    output_path.mkdir(parents=True, exist_ok=True)
 
+    # 6. Render to output directory   
+    renderer.render(str(output_path))
+    log.info("Documentation rendered successfully.")
+
+if __name__ == "__main__": # pragma: no cover
+    arg_parser = argparse.ArgumentParser(description="API Documentation Generator")
+    # FUTURE: (maybe) - currently we crawl the source directories specified by pyproject.toml
+    # arg_parser.add_argument("-input", help="Input directory of source code")
+    arg_parser.add_argument("-output", help="Output directory for documentation")
+    args = arg_parser.parse_args()
+
+    main(output_dir=args.output)
+    
 # end of file src/org/slashlib/py/apimddoc/cli.py
