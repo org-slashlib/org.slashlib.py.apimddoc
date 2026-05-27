@@ -14,10 +14,11 @@
 # - LANGUAGE: en-US for all comments and documentation.
 #
 
-import typing
+import inspect
 import importlib.metadata
 import logging
 import pathlib
+import typing
 
 import org.slashlib.py.apimddoc.meta as meta
 from org.slashlib.py.apimddoc.core.models import BaseModel
@@ -41,7 +42,7 @@ class RenderingPolicy(metaclass=meta.AutoInitializer):
             return
         cls._log = logging.getLogger(f"org.slashlib.py.apimddoc.{pathlib.Path(__file__).stem}.{cls.__name__}")
         cls.__is_initialized = True
-        cls._log.info("Default RenderingPolicy initialized.")
+        cls._log.debug(f"{cls.__name__}.{inspect.currentframe().f_code.co_name}: Default RenderingPolicy initialized.")
 
     @classmethod
     def get_policy(cls) -> typing.Type['RenderingPolicy']:
@@ -53,10 +54,10 @@ class RenderingPolicy(metaclass=meta.AutoInitializer):
         
         if entry_points:
             policy_class = list(entry_points)[0].load()
-            cls._log.info("Loaded custom RenderingPolicy plugin.")
+            cls._log.debug(f"{cls.__name__}.{inspect.currentframe().f_code.co_name}: Using custom RenderingPolicy plugin.")
             return policy_class
         
-        cls._log.info("Using default RenderingPolicy.")
+        cls._log.debug(f"{cls.__name__}.{inspect.currentframe().f_code.co_name}: Using default RenderingPolicy.")
         return cls
 
     @staticmethod
