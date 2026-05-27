@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "paths": {
     "root":         "{ROOT}",
+    "api":          "{ROOT}/docs/API",
     "assets":       "{ROOT}/assets"
   },
   "assets": {
