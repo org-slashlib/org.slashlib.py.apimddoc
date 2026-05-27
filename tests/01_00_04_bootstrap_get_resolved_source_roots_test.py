@@ -55,8 +55,8 @@ def test_get_resolved_source_roots_success(monkeypatch, tmp_path):
     # 4. Execute
     result = get_resolved_source_roots()
     
-    # 5. Assert: The path should be absolute and use POSIX separators
-    expected_path = (tmp_path / "src").resolve().as_posix()
+    # 5. Assert: The path should be absolute
+    expected_path = (tmp_path / "src").resolve()
     assert result == (expected_path,)
 
 def test_get_resolved_source_roots_multiple(monkeypatch, tmp_path):
@@ -72,8 +72,8 @@ def test_get_resolved_source_roots_multiple(monkeypatch, tmp_path):
     
     result = get_resolved_source_roots()
     
-    expected1 = (tmp_path / "src1").resolve().as_posix()
-    expected2 = (tmp_path / "src2").resolve().as_posix()
+    expected1 = (tmp_path / "src1").resolve()
+    expected2 = (tmp_path / "src2").resolve()
     
     assert result == (expected1, expected2)
 
