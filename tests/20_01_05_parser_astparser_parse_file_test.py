@@ -48,7 +48,7 @@ def test_parse_file_with_valid_root():
     Why: Prevent ValueError from SourceCrawler by configuring a valid root.
     """
     # Define a temporary project root and source root
-    proj_root = pathlib.Path("/project")
+    proj_root = pathlib.Path.cwd() / "project"
     src_root = proj_root / "src"
     
     # Configure SourceCrawler to recognize the test path
