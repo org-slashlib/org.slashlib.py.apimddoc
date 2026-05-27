@@ -34,7 +34,7 @@ def test_markdownrenderer_render_unconfigured_raises():
     with pytest.raises(RuntimeError, match="MarkdownRenderer not configured"):
         MarkdownRenderer.render("output")
 
-@patch("org.slashlib.py.apimddoc.renderer.markdown.registry.ProjectRegistry")
+@patch("org.slashlib.py.apimddoc.core.registry.ProjectRegistry")
 @patch("org.slashlib.py.apimddoc.renderer.markdown.RenderingPolicy.get_policy")
 @patch("org.slashlib.py.apimddoc.renderer.markdown.pathlib.Path")
 def test_markdownrenderer_render_success(mock_path_cls, mock_get_policy, mock_registry_cls):
@@ -51,7 +51,7 @@ def test_markdownrenderer_render_success(mock_path_cls, mock_get_policy, mock_re
     
     # Setup registry mock
     mock_registry = mock_registry_cls
-    mock_registry.list_all_models.return_value = [MagicMock()]
+    mock_registry.list_all_modules.return_value = [MagicMock()]
     
     mock_policy = MagicMock()
     mock_policy.should_render_entity.return_value = True
