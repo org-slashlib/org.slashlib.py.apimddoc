@@ -16,9 +16,10 @@
 
 # python imports
 import argparse
+import importlib.resources
+import inspect
 import logging
 import pathlib
-import importlib.resources
 import typing
 
 # third party imports
@@ -32,7 +33,12 @@ from org.slashlib.py.apimddoc.crawler import SourceCrawler as crawler
 import org.slashlib.py.apimddoc.parser.parser as parser
 
 # setup logging
-log = logging.getLogger(f"org.slashlib.py.apimddoc.{pathlib.Path(__file__).stem}")
+org.slashlib.py.configloader.setup_logging()
+
+MODULENAME = pathlib.Path(__file__).stem
+
+# setup logger
+log = logging.getLogger(f"org.slashlib.py.apimddoc.{MODULENAME}")
 
 def _find_template_dir(resolved_roots: typing.Tuple[str, ...]) -> typing.Optional[pathlib.Path]:
     """
@@ -50,7 +56,7 @@ def _find_template_dir(resolved_roots: typing.Tuple[str, ...]) -> typing.Optiona
         source_root = pathlib.Path(root_str)
         potential_path = source_root.parent.parent / "templates"
         
-        log.debug(f"Checking for templates at: {potential_path}")
+        log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Checking for templates at: {potential_path}")
         
         if potential_path.exists():
             return potential_path
@@ -70,12 +76,15 @@ def _get_template_dir(resolved_roots: typing.Tuple[str, ...]) -> pathlib.Path:
         if found_path:
             return found_path
             
-        log.warning("Could not find local templates in source roots. Falling back to template resources of `org.slashlib.py.apimddoc`.")
+        log.warning(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Could not find local templates in source roots.")
     except Exception as e:
-        log.warning(f"Error while determining template directory: {e}. Falling back to template resources of `org.slashlib.py.apimddoc`.")
+        log.warning(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Error while determining template directory.", e)
             
     # Fallback to package resources
-    return importlib.resources.files("org.slashlib.py.apimddoc").joinpath("templates")
+    fallback_path = importlib.resources.files("org.slashlib.py.apimddoc").joinpath("templates")
+    log.warning(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Falling back to template resources of `org.slashlib.py.apimddoc` - `{fallback_path}`.")
+    
+    return fallback_path
 
 def main(output_dir: str = None) -> None:
     """
@@ -84,6 +93,7 @@ def main(output_dir: str = None) -> None:
     Coordinates the registry initialization, parsing and rendering process.
     """
     # 1. Get Template Directory
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Resolving templates")
     resolved_roots = bootstrap.get_resolved_source_roots()
     template_dir = _get_template_dir(resolved_roots)
 
@@ -92,29 +102,26 @@ def main(output_dir: str = None) -> None:
     # Determine input path: use provided arg or default to current directory
     # input_path = pathlib.Path(args.input) if args.input else bootstrap.get_pyproject_path().parent
     # all_files = crawler.get_all_python_files(input_path)
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Resolving source files")
     all_files = crawler.get_all_python_files()
 
     # 3. Parse source files
-    log.info("Starting parsing process.")
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Starting parsing process.")
     ast_parser = parser.ASTParser(root_path=bootstrap.get_pyproject_path().parent)
     ast_parser.parse(all_files)
-    log.info("Parsing process completed.")
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Parsing process completed.")
 
     # 4. Dependency Injection
-    log.info(f"Initializing registry and renderer. Using template dir: {template_dir}")
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Initializing registry and renderer. Using template dir: {template_dir}")
     renderer.setup(str(template_dir))
 
     # 5. Evaluate output directory
-    if output_dir is None:
-        output_dir = bootstrap.get_pyproject_path().parent / "docs"
-    
-    output_path = pathlib.Path(output_dir)
-    log.info(f"Rendering documentation to: {output_path}")   
-    output_path.mkdir(parents=True, exist_ok=True)
+    output_path = bootstrap.get_document_output_dir(output_dir)
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Rendering documentation to: {output_path}")   
 
     # 6. Render to output directory   
     renderer.render(str(output_path))
-    log.info("Documentation rendered successfully.")
+    log.debug(f"{MODULENAME}.{inspect.currentframe().f_code.co_name}: Documentation rendered successfully.")
 
 if __name__ == "__main__": # pragma: no cover
     arg_parser = argparse.ArgumentParser(description="API Documentation Generator")

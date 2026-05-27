@@ -15,14 +15,14 @@
 #
 
 # python imports
-import pathlib
+import inspect
 import logging
+import pathlib
 import typing
 
 # internal imports
 import org.slashlib.py.apimddoc.bootstrap as bootstrap
 import org.slashlib.py.apimddoc.meta as meta
-
 
 class SourceCrawler(metaclass=meta.AutoInitializer):
     """
@@ -52,16 +52,16 @@ class SourceCrawler(metaclass=meta.AutoInitializer):
         """
         if cls.__is_initialized:
             if cls._log:
-                cls._log.debug("Crawler already initialized. Skipping redundant initialization.")
+                cls._log.debug(f"{cls.__name__}.{inspect.currentframe().f_code.co_name}: Crawler already initialized. Skipping redundant initialization.")
             return
         
         cls._log = logging.getLogger(f"org.slashlib.py.apimddoc.{pathlib.Path(__file__).stem}.{cls.__name__}")
         
         # Convert source roots to pathlib.Path objects
-        raw_roots = bootstrap.get_source_roots()
+        raw_roots = bootstrap.get_resolved_source_roots()
         cls._source_roots = tuple(pathlib.Path(root) for root in raw_roots)
 
-        cls._log.info(f"Initialized crawler with roots: {cls._source_roots}")
+        cls._log.debug(f"{cls.__name__}.{inspect.currentframe().f_code.co_name}: Initialized crawler with roots: {cls._source_roots}")
         cls.__is_initialized = True
 
     @staticmethod
@@ -99,10 +99,11 @@ class SourceCrawler(metaclass=meta.AutoInitializer):
         """
         python_files = []
         for root in SourceCrawler._source_roots:
-            SourceCrawler._log.info(f"Crawling source root: {root}")
+            # make sure glob is called for absoulte source paths (which will return absolute *.py filepaths)
+            SourceCrawler._log.debug(f"{SourceCrawler.__name__}.{inspect.currentframe().f_code.co_name}: Crawling: `{root}` (was:`{root}`)")
             python_files.extend(list(root.rglob("*.py")))
         
-        SourceCrawler._log.info(f"Found {len(python_files)} python files in total.")
+        SourceCrawler._log.debug(f"{SourceCrawler.__name__}.{inspect.currentframe().f_code.co_name}: Found {len(python_files)} python files in total.")
         return python_files
 
     @staticmethod
@@ -120,8 +121,12 @@ class SourceCrawler(metaclass=meta.AutoInitializer):
         Raises:
             ValueError: If the file path does not reside within any of the configured source roots.
         """
+        SourceCrawler._log.debug(f"{SourceCrawler.__name__}.{inspect.currentframe().f_code.co_name} for: `{file_path}`")
+
         # Find which source root this file belongs to
         for root in SourceCrawler._source_roots:
+            SourceCrawler._log.debug(f"{SourceCrawler.__name__}.{inspect.currentframe().f_code.co_name}: checking in `{root}` (was:`{root}`)")
+            
             if root in file_path.parents or root == file_path.parent:
                 relative_path = file_path.relative_to(root)
                 
