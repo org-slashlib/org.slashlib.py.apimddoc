@@ -15,8 +15,12 @@
 #
 
 import ast
+import inspect
+import logging
+import pathlib
 import typing
 
+from org.slashlib.py.apimddoc.core.registry import ProjectRegistry
 from org.slashlib.py.apimddoc.core.models.modulemodel import ModuleModel
 from org.slashlib.py.apimddoc.core.models.classmodel import ClassModel
 from org.slashlib.py.apimddoc.core.models.functionmodel import FunctionModel
@@ -37,6 +41,7 @@ class FileVisitor(ast.NodeVisitor):
         Args:
             module_model (ModuleModel): The module model to populate.
         """
+        self.log = logging.getLogger(f"org.slashlib.py.apimddoc.parser.{pathlib.Path(__file__).stem}.{self.__class__.__name__}")
         self.module_model = module_model
         self.current_class: typing.Optional[ClassModel] = None
 
@@ -47,6 +52,8 @@ class FileVisitor(ast.NodeVisitor):
         Args:
             node (ast.ClassDef): The AST node representing the class.
         """
+        self.log.info(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {node}")
+        
         # Create a new ClassModel
         class_model = ClassModel(
             name=node.name,
@@ -76,6 +83,8 @@ class FileVisitor(ast.NodeVisitor):
         Args:
             node (ast.FunctionDef): The AST node representing the function/method.
         """
+        self.log.info(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {node}")
+
         # Create a new FunctionModel
         function_model = FunctionModel(
             name=node.name,
@@ -85,6 +94,8 @@ class FileVisitor(ast.NodeVisitor):
             display_namespace=self.module_model.display_namespace
         )
         function_model.docstring = ast.get_docstring(node)
+
+        ProjectRegistry.register_module(function_model, function_model.fqmn)
         
         # Decide if this is a method of a class or a standalone function
         if self.current_class:
@@ -101,6 +112,7 @@ class FileVisitor(ast.NodeVisitor):
         Args:
             node (ast.AsyncFunctionDef): The AST node representing the async function.
         """
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {node}")       
         self.visit_FunctionDef(node)
 
 

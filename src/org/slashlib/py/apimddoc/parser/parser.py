@@ -14,10 +14,13 @@
 # - LANGUAGE: en-US for all comments and documentation.
 #
 
+import ast
+import inspect
+import logging
 import pathlib
 import typing
-import ast
 
+import org.slashlib.py.apimddoc.bootstrap as bootstrap
 from org.slashlib.py.apimddoc.core.registry import ProjectRegistry
 from org.slashlib.py.apimddoc.crawler import SourceCrawler
 from org.slashlib.py.apimddoc.parser.filevisitor import FileVisitor
@@ -38,7 +41,10 @@ class ASTParser:
         Args:
             root_path (pathlib.Path): The absolute path to the project root.
         """
+        self.log = logging.getLogger(f"org.slashlib.py.apimddoc.parser.{pathlib.Path(__file__).stem}.{self.__class__.__name__}")
         self.root_path = root_path
+        
+        self.log.info(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name} - rootpath: {root_path}")
 
     def parse(self, file_paths: typing.List[pathlib.Path]) -> None:
         """
@@ -48,9 +54,14 @@ class ASTParser:
         Args:
             file_paths (typing.List[pathlib.Path]): List of .py files to process.
         """
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: starting ...")
+
         for file_path in file_paths:
+            self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {file_path}")
             self.parsePath(file_path)
             self.parseFile(file_path)
+
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: done.")
 
     def parsePath(self, file_path: pathlib.Path) -> None:
         """
@@ -60,6 +71,8 @@ class ASTParser:
         Args:
             file_path (pathlib.Path): The path to the file currently being processed.
         """
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {file_path}")
+
         relative_path = file_path.relative_to(self.root_path)
         # Exclude the file name itself (last element) as it is handled by parseFile
         segments = list(relative_path.parent.parts)
@@ -96,30 +109,40 @@ class ASTParser:
         Returns:
             Any: The module model corresponding to this segment.
         """
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: `{file_path}` - segment: `{segment}`")
+        
         current_fqmn_parts.append(segment)
-        fqmn = ".".join(current_fqmn_parts)
-        
-        module = ProjectRegistry.get_module(fqmn)
-        
-        if not module:
-            current_phys_path = self.root_path.joinpath(*segments[:index+1])
+        current_phys_path = self.root_path.joinpath(*segments[:index+1])
             
-            if SourceCrawler.is_package(current_phys_path):
-                module = ModuleModel(
-                    name=segment, fqmn=fqmn, file_path=str(current_phys_path),
-                    display_namespace=fqmn, source_namespace=fqmn
-                )
-            else:
-                module = NamespaceModuleModel(
-                    name=segment, fqmn=fqmn, file_path=str(current_phys_path),
-                    display_namespace=fqmn, source_namespace=fqmn
-                )
+        try:
+            fqmn = SourceCrawler.get_module_namespace(current_phys_path)
+            module = ProjectRegistry.get_module(fqmn)
             
-            ProjectRegistry.register_module(module, fqmn)
-            if parent_module:
-                parent_module.add_submodule(module)
-        
-        return module
+            if not module:
+                            
+                if SourceCrawler.is_package(current_phys_path):
+                    module = ModuleModel(
+                        name=segment, fqmn=fqmn, file_path=str(current_phys_path),
+                        display_namespace=fqmn, source_namespace=fqmn
+                    )
+                else:
+                    module = NamespaceModuleModel(
+                        name=segment, fqmn=fqmn, file_path=str(current_phys_path),
+                        display_namespace=fqmn, source_namespace=fqmn
+                    )
+
+                self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: `{file_path}` - fqmn: {fqmn} => module: `{module}`")
+                
+                ProjectRegistry.register_module(module, fqmn)
+                if parent_module:
+                    parent_module.add_submodule(module)
+            
+            return module
+                    
+        except ValueError as e:
+            if not bootstrap.is_resolved_source_root(current_phys_path):
+                self.log.warning(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {e}")
+            return None
 
     def parseFile(self, file_path: pathlib.Path) -> None:
         """
@@ -128,8 +151,12 @@ class ASTParser:
         Args:
             file_path (pathlib.Path): The path to the file to be parsed.
         """
-        fqmn = SourceCrawler.get_module_namespace(file_path)
+        self.log.debug(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {file_path}")
+
+        fqmn = SourceCrawler.get_module_namespace(file_path.parent)
         module_model = ProjectRegistry.get_module(fqmn)
+
+        self.log.info(f"{self.__class__.__name__}.{inspect.currentframe().f_code.co_name}: {file_path} - lookup: {fqmn} => module {module_model}")
         
         if module_model:
             with open(file_path, "r", encoding="utf-8") as source:
