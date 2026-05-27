@@ -64,25 +64,34 @@ def test_sourcecrawler_class_auto_init_success(monkeypatch, tmp_path):
     assert SourceCrawler._log is not None
     assert SourceCrawler._source_roots == mock_roots
 
-def test_sourcecrawler_class_auto_init_redundant_call(caplog):
+def test_sourcecrawler_class_auto_init_redundant_call():
     """
     What: Verify that calling _class_auto_init_ a second time logs a debug message 
           and returns immediately (redundant initialization).
-    Why: To ensure the initialization logic is idempotent and robust.
+    Why: Ensure the initialization logic is idempotent and robust.
     """
-    # 1. Ensure a logger is set to prevent exceptions in the debug path
-    if SourceCrawler._log is None:
-        SourceCrawler._log = logging.getLogger("test_logger")
+    # 1. Reset state
+    setattr(SourceCrawler, "_SourceCrawler__is_initialized", False)
     
-    # 2. Set log level to DEBUG to capture the skip-message
-    SourceCrawler._log.setLevel(logging.DEBUG)
+    # 2. Setup local logger to capture messages
+    logger_name = "org.slashlib.py.apimddoc.crawler.SourceCrawler"
+    logger = logging.getLogger(logger_name)
+    logger.handlers = []
     
-    # 3. Trigger redundant initialization
-    # Note: The first call is already performed by meta.AutoInitializer upon module import.
-    with caplog.at_level(logging.DEBUG):
-        SourceCrawler._class_auto_init_()
+    captured_messages = []
+    class TestHandler(logging.Handler):
+        def emit(self, record):
+            captured_messages.append(record.getMessage())
+            
+    logger.addHandler(TestHandler())
+    logger.setLevel(logging.DEBUG)
+    SourceCrawler._log = logger
+    
+    # 3. Trigger initial and redundant initialization
+    SourceCrawler._class_auto_init_()
+    SourceCrawler._class_auto_init_()
     
     # 4. Assert that the debug message was logged
-    assert "Crawler already initialized" in caplog.text
+    assert any("Crawler already initialized" in msg for msg in captured_messages)
 
 # end of file test/02_01_01_crawler_sourcecrawler__class_auto_init__test.py
