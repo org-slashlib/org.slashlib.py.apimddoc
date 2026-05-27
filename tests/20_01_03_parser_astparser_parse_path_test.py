@@ -25,6 +25,7 @@ Special Considerations:
 import pytest
 import pathlib
 from unittest.mock import MagicMock
+from org.slashlib.py.apimddoc.crawler import SourceCrawler
 from org.slashlib.py.apimddoc.parser.parser import ASTParser
 from org.slashlib.py.apimddoc.core.registry import ProjectRegistry
 
@@ -57,11 +58,13 @@ def test_parse_path_respects_src_as_root():
          ensuring 'src' itself is not part of the FQMN.
     """
     # Setup: root points to 'src'
-    src_root = pathlib.Path("/project/src")
-    parser = ASTParser(root_path=src_root)
+    src_root = pathlib.Path("/project/src").resolve()
+    SourceCrawler._source_roots = [src_root]
+    
+    parser = ASTParser(root_path=src_root)    
     
     # Simulate a file path inside the project
-    file_path = src_root / "org" / "slashlib" / "test.py"
+    file_path = (src_root / "org" / "slashlib" / "test.py").resolve()
     
     # Process
     parser.parsePath(file_path)
